@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrampoLocal - Plataforma de Empregos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .hidden { display: none; }
+        .mobile-nav { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #e2e8f0; z-index: 40; }
+        .auth-card { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- TELA DE AUTENTICAÇÃO E ONBOARDING -->
+    <div id="authScreen" class="fixed inset-0 bg-white z-[100] p-6 flex flex-col items-center overflow-y-auto">
+        <div class="w-full max-w-sm my-auto">
+            
+            <!-- Passo 1: Seleção de Perfil -->
+            <div id="stepRole" class="auth-card">
+                <h1 class="text-3xl font-black text-blue-600 mb-2">TrampoLocal</h1>
+                <p class="text-gray-500 mb-8">Conectando talentos operacionais a empresas locais sem burocracia.</p>
+                
+                <div class="space-y-4">
+                    <button onclick="goToEmployerAuth()" class="w-full p-6 border-2 border-gray-100 rounded-2xl text-left hover:border-blue-500 transition-all bg-white shadow-sm group">
+                        <div class="flex justify-between items-center">
+                            <i class="fas fa-store text-blue-600 text-2xl"></i>
+                            <i class="fas fa-chevron-right text-gray-300 group-hover:text-blue-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-2">Sou Empresa</h3>
+                        <p class="text-sm text-gray-500">Quero anunciar vagas e contratar.</p>
+                    </button>
+
+                    <button onclick="showCandidateRegister()" class="w-full p-6 border-2 border-gray-100 rounded-2xl text-left hover:border-green-500 transition-all bg-white shadow-sm group">
+                        <div class="flex justify-between items-center">
+                            <i class="fas fa-user text-green-600 text-2xl"></i>
+                            <i class="fas fa-chevron-right text-gray-300 group-hover:text-green-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg mt-2">Sou Candidato</h3>
+                        <p class="text-sm text-gray-500">Busco trabalho perto de casa.</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Passo 2: Login/Cadastro Empresa (Opções Google vs Email) -->
+            <div id="stepEmployerAuth" class="hidden auth-card space-y-4">
+                <button onclick="goBack()" class="text-gray-400 text-sm font-bold mb-4 flex items-center"><i class="fas fa-arrow-left mr-2"></i> Voltar</button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Acesso da Empresa</h2>
+
+                <!-- Opção Google -->
+                <button onclick="simulateGoogleLogin()" class="w-full flex items-center justify-center gap-3 border border-gray-300 p-3.5 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-sm">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18">
+                    Continuar com Google
+                </button>
+
+                <div class="relative py-4">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                    <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-gray-400 font-bold">ou use seu e-mail</span></div>
+                </div>
+
+                <!-- Formulário Email/Senha -->
+                <form id="employerForm" class="space-y-3">
+                    <div id="regFields" class="hidden space-y-3">
+                        <input type="text" id="empName" placeholder="Nome da Empresa / Fantasia" class="w-full p-3.5 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <input type="email" id="empEmail" placeholder="Seu e-mail corporativo" class="w-full p-3.5 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    <input type="password" id="empPass" placeholder="Senha" class="w-full p-3.5 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    
+                    <button type="submit" id="btnMainAuth" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700">Entrar</button>
+                </form>
+
+                <p class="text-center text-sm text-gray-500 pt-4">
+                    <span id="toggleText">Ainda não tem conta?</span> 
+                    <button onclick="toggleAuthMode()" id="btnToggle" class="text-blue-600 font-bold underline">Cadastre-se agora</button>
+                </p>
+            </div>
+
+            <!-- Passo 3: Cadastro Rápido Candidato -->
+            <div id="stepCandidateAuth" class="hidden auth-card space-y-4">
+                <button onclick="goBack()" class="text-gray-400 text-sm font-bold mb-4 flex items-center"><i class="fas fa-arrow-left mr-2"></i> Voltar</button>
+                <h2 class="text-2xl font-bold text-gray-800">Seu Perfil Profissional</h2>
+                <p class="text-sm text-gray-500 mb-4 italic">Sem currículo. Sem complicação.</p>
+                <form id="candForm" class="space-y-3">
+                    <input type="text" id="cName" placeholder="Seu Nome Completo" class="w-full p-4 border rounded-xl" required>
+                    <input type="tel" id="cPhone" placeholder="WhatsApp (DDD + Número)" class="w-full p-4 border rounded-xl" required>
+                    <input type="text" id="cRole" placeholder="O que você faz? (ex: Auxiliar)" class="w-full p-4 border rounded-xl" required>
+                    <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-green-100">Ver Vagas Próximas</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP HEADER -->
+    <header class="bg-white border-b border-gray-100 p-4 sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <span class="text-xl font-black text-blue-600 tracking-tighter">TrampoLocal</span>
+            <div class="flex items-center gap-4">
+                <span id="badgeUser" class="text-[10px] font-bold bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase"></span>
+                <button onclick="logout()" class="text-red-400 text-xs font-bold"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="max-w-md mx-auto p-4">
+        
+        <!-- View Candidato -->
+        <section id="viewCandidate">
+            <div class="bg-blue-600 rounded-3xl p-6 mb-6 text-white shadow-xl shadow-blue-100">
+                <h2 class="text-xl font-bold">Olá, <span id="helloUser"></span>!</h2>
+                <p class="text-blue-100 text-sm mt-1">Encontramos vagas no seu bairro.</p>
+            </div>
+            <div id="jobFeed" class="space-y-4"></div>
+        </section>
+
+        <!-- View Empresa -->
+        <section id="viewEmployer" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Minhas Vagas</h2>
+                <button onclick="showModal('modalJob')" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-md">+ Criar Vaga</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-8">
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                    <p class="text-gray-400 text-[10px] font-bold uppercase">Vagas Ativas</p>
+                    <p id="statJobs" class="text-2xl font-black text-blue-600">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                    <p class="text-gray-400 text-[10px] font-bold uppercase">Interessados</p>
+                    <p id="statApps" class="text-2xl font-black text-green-500">0</p>
+                </div>
+            </div>
+
+            <div id="employerJobsList" class="space-y-4"></div>
+        </section>
+    </main>
+
+    <!-- MODAL VAGA -->
+    <div id="modalJob" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">Nova Vaga</h3>
+            <form id="jobForm" class="space-y-3">
+                <input type="text" id="jTitle" placeholder="Cargo" class="w-full p-3 border rounded-xl" required>
+                <input type="text" id="jBairro" placeholder="Bairro" class="w-full p-3 border rounded-xl" required>
+                <input type="text" id="jSalario" placeholder="Salário (Ex: 1.500 ou A combinar)" class="w-full p-3 border rounded-xl">
+                <textarea id="jDesc" placeholder="Descrição rápida..." class="w-full p-3 border rounded-xl h-24"></textarea>
+                <div class="flex gap-2 pt-4">
+                    <button type="button" onclick="closeModal('modalJob')" class="flex-1 py-3 font-bold text-gray-400">Cancelar</button>
+                    <button type="submit" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold">Publicar Vaga</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CANDIDATOS -->
+    <div id="modalList" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[80vh] overflow-y-auto shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">Interessados</h3>
+            <div id="candListContent" class="space-y-3"></div>
+            <button onclick="closeModal('modalList')" class="w-full mt-6 py-3 bg-gray-100 rounded-xl font-bold text-gray-500">Fechar</button>
+        </div>
+    </div>
+
+    <!-- NAV BAR -->
+    <nav class="mobile-nav h-16 flex items-center justify-around">
+        <div class="text-blue-600 flex flex-col items-center"><i class="fas fa-briefcase text-xl"></i><span class="text-[10px] font-bold">Vagas</span></div>
+        <div class="text-gray-300 flex flex-col items-center"><i class="fas fa-comments text-xl"></i><span class="text-[10px] font-bold">Chats</span></div>
+        <div class="text-gray-300 flex flex-col items-center"><i class="fas fa-rocket text-xl"></i><span class="text-[10px] font-bold">Premium</span></div>
+    </nav>
+
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('trampo_user')) || null;
+        let allJobs = JSON.parse(localStorage.getItem('trampo_jobs')) || [];
+        let isRegister = false;
+
+        // --- AUTH LOGIC ---
+        function goToEmployerAuth() {
+            document.getElementById('stepRole').classList.add('hidden');
+            document.getElementById('stepEmployerAuth').classList.remove('hidden');
+        }
+
+        function showCandidateRegister() {
+            document.getElementById('stepRole').classList.add('hidden');
+            document.getElementById('stepCandidateAuth').classList.remove('hidden');
+        }
+
+        function goBack() {
+            document.querySelectorAll('.auth-card').forEach(el => el.classList.add('hidden'));
+            document.getElementById('stepRole').classList.remove('hidden');
+        }
+
+        function toggleAuthMode() {
+            isRegister = !isRegister;
+            document.getElementById('btnMainAuth').innerText = isRegister ? 'Criar Minha Conta' : 'Entrar';
+            document.getElementById('toggleText').innerText = isRegister ? 'Já tem conta?' : 'Ainda não tem conta?';
+            document.getElementById('btnToggle').innerText = isRegister ? 'Faça Login' : 'Cadastre-se agora';
+            document.getElementById('regFields').classList.toggle('hidden', !isRegister);
+        }
+
+        function simulateGoogleLogin() {
+            alert("Simulando login com Google...");
+            completeAuth({ id: 'g123', name: 'Empresa Google Ltda', role: 'employer', email: 'contato@google.com' });
+        }
+
+        document.getElementById('employerForm').onsubmit = (e) => {
+            e.preventDefault();
+            const name = isRegister ? document.getElementById('empName').value : 'Empresa Logada';
+            completeAuth({ id: Date.now(), name: name, role: 'employer', email: document.getElementById('empEmail').value });
+        };
+
+        document.getElementById('candForm').onsubmit = (e) => {
+            e.preventDefault();
+            completeAuth({ 
+                id: Date.now(), 
+                name: document.getElementById('cName').value, 
+                role: 'candidate', 
+                phone: document.getElementById('cPhone').value,
+                pref: document.getElementById('cRole').value
+            });
+        };
+
+        function completeAuth(user) {
+            currentUser = user;
+            localStorage.setItem('trampo_user', JSON.stringify(currentUser));
+            location.reload();
+        }
+
+        function logout() {
+            localStorage.removeItem('trampo_user');
+            location.reload();
+        }
+
+        // --- APP LOGIC ---
+        function init() {
+            if(!currentUser) {
+                document.getElementById('authScreen').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('badgeUser').innerText = currentUser.role === 'employer' ? 'Painel Empresa' : 'Candidato';
+            
+            if(currentUser.role === 'employer') {
+                document.getElementById('viewEmployer').classList.remove('hidden');
+                document.getElementById('viewCandidate').classList.add('hidden');
+            } else {
+                document.getElementById('helloUser').innerText = currentUser.name.split(' ')[0];
+            }
+            render();
+        }
+
+        function render() {
+            const feed = document.getElementById('jobFeed');
+            const empList = document.getElementById('employerJobsList');
+            feed.innerHTML = ''; empList.innerHTML = '';
+            
+            let totalApps = 0;
+            let myJobsCount = 0;
+
+            allJobs.forEach(job => {
+                // View Candidato
+                feed.innerHTML += `
+                    <div class="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-black text-gray-800 text-lg leading-tight">${job.title}</h3>
+                            <span class="text-[10px] font-black bg-green-50 text-green-600 px-2 py-1 rounded-lg uppercase">${job.salario || 'A combinar'}</span>
+                        </div>
+                        <p class="text-blue-600 text-xs font-bold mt-1"><i class="fas fa-map-marker-alt mr-1"></i> ${job.bairro} • ${job.empresa}</p>
+                        <p class="text-gray-400 text-sm mt-3 line-clamp-2">${job.desc}</p>
+                        <button onclick="apply(${job.id})" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-2xl font-bold shadow-lg shadow-blue-50 active:scale-95 transition-all">Tenho Interesse</button>
+                    </div>
+                `;
+
+                // View Empresa
+                if(currentUser.role === 'employer' && job.companyId === currentUser.id) {
+                    myJobsCount++;
+                    totalApps += job.applicants.length;
+                    empList.innerHTML += `
+                        <div class="bg-white p-4 rounded-2xl border-l-4 border-blue-600 shadow-sm flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-gray-800">${job.title}</h4>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase">${job.applicants.length} Candidatos</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="viewCandidates(${job.id})" class="bg-blue-50 text-blue-600 text-xs font-bold px-3 py-2 rounded-lg">Ver</button>
+                                <button onclick="deleteJob(${job.id})" class="text-gray-300 p-2"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if(currentUser.role === 'employer') {
+                document.getElementById('statJobs').innerText = myJobsCount;
+                document.getElementById('statApps').innerText = totalApps;
+            }
+        }
+
+        function apply(jobId) {
+            const job = allJobs.find(j => j.id === jobId);
+            if(!job.applicants.find(a => a.id === currentUser.id)) {
+                job.applicants.push(currentUser);
+                save();
+                alert("Candidatura enviada! A empresa entrará em contato.");
+                render();
+            } else {
+                alert("Você já demonstrou interesse nesta vaga.");
+            }
+        }
+
+        function viewCandidates(jobId) {
+            const job = allJobs.find(j => j.id === jobId);
+            const content = document.getElementById('candListContent');
+            showModal('modalList');
+            
+            if(job.applicants.length === 0) {
+                content.innerHTML = "<p class='text-gray-400 text-sm italic'>Nenhum candidato ainda.</p>";
+                return;
+            }
+
+            content.innerHTML = job.applicants.map(a => `
+                <div class="p-4 border border-gray-100 rounded-2xl bg-gray-50">
+                    <p class="font-bold text-gray-800">${a.name}</p>
+                    <p class="text-xs text-gray-500 mb-3">${a.pref || 'Geral'}</p>
+                    <a href="https://wa.me/55${a.phone}" target="_blank" class="inline-block bg-green-500 text-white text-[10px] font-bold px-3 py-2 rounded-lg uppercase">
+                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('jobForm').onsubmit = (e) => {
+            e.preventDefault();
+            const newJob = {
+                id: Date.now(),
+                companyId: currentUser.id,
+                empresa: currentUser.name,
+                title: document.getElementById('jTitle').value,
+                bairro: document.getElementById('jBairro').value,
+                salario: document.getElementById('jSalario').value,
+                desc: document.getElementById('jDesc').value,
+                applicants: []
+            };
+            allJobs.unshift(newJob);
+            save();
+            closeModal('modalJob');
+            render();
+            e.target.reset();
+        };
+
+        function deleteJob(id) {
+            if(confirm("Excluir esta vaga?")) {
+                allJobs = allJobs.filter(j => j.id !== id);
+                save(); render();
+            }
+        }
+
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function save() { localStorage.setItem('trampo_jobs', JSON.stringify(allJobs)); }
+
+        init();
+    </script>
+</body>
+</html>
