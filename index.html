@@ -9,7 +9,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .mobile-nav { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #e2e8f0; z-index: 40; }
         .auth-card { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -17,103 +17,74 @@
 </head>
 <body class="pb-20">
 
-    <!-- TELA DE AUTENTICAÇÃO E ONBOARDING -->
-    <div id="authScreen" class="fixed inset-0 bg-white z-[100] p-6 flex flex-col items-center overflow-y-auto">
+    <!-- TELA DE LOADING (Firebase Sync) -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-[110] flex items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- TELA DE AUTENTICAÇÃO -->
+    <div id="authScreen" class="fixed inset-0 bg-white z-[100] p-6 flex flex-col items-center overflow-y-auto hidden">
         <div class="w-full max-w-sm my-auto">
-            
-            <!-- Passo 1: Seleção de Perfil -->
             <div id="stepRole" class="auth-card">
                 <h1 class="text-3xl font-black text-blue-600 mb-2">TrampoLocal</h1>
-                <p class="text-gray-500 mb-8">Conectando talentos operacionais a empresas locais sem burocracia.</p>
-                
+                <p class="text-gray-500 mb-8">Conectando talentos operacionais a empresas locais.</p>
                 <div class="space-y-4">
-                    <button onclick="goToEmployerAuth()" class="w-full p-6 border-2 border-gray-100 rounded-2xl text-left hover:border-blue-500 transition-all bg-white shadow-sm group">
-                        <div class="flex justify-between items-center">
-                            <i class="fas fa-store text-blue-600 text-2xl"></i>
-                            <i class="fas fa-chevron-right text-gray-300 group-hover:text-blue-500"></i>
-                        </div>
+                    <button onclick="goToAuth('employer')" class="w-full p-6 border-2 border-gray-100 rounded-2xl text-left hover:border-blue-500 transition-all bg-white shadow-sm group">
+                        <div class="flex justify-between items-center"><i class="fas fa-store text-blue-600 text-2xl"></i><i class="fas fa-chevron-right text-gray-300 group-hover:text-blue-500"></i></div>
                         <h3 class="font-bold text-lg mt-2">Sou Empresa</h3>
                         <p class="text-sm text-gray-500">Quero anunciar vagas e contratar.</p>
                     </button>
-
-                    <button onclick="showCandidateRegister()" class="w-full p-6 border-2 border-gray-100 rounded-2xl text-left hover:border-green-500 transition-all bg-white shadow-sm group">
-                        <div class="flex justify-between items-center">
-                            <i class="fas fa-user text-green-600 text-2xl"></i>
-                            <i class="fas fa-chevron-right text-gray-300 group-hover:text-green-500"></i>
-                        </div>
+                    <button onclick="goToAuth('candidate')" class="w-full p-6 border-2 border-gray-100 rounded-2xl text-left hover:border-green-500 transition-all bg-white shadow-sm group">
+                        <div class="flex justify-between items-center"><i class="fas fa-user text-green-600 text-2xl"></i><i class="fas fa-chevron-right text-gray-300 group-hover:text-green-500"></i></div>
                         <h3 class="font-bold text-lg mt-2">Sou Candidato</h3>
                         <p class="text-sm text-gray-500">Busco trabalho perto de casa.</p>
                     </button>
                 </div>
             </div>
 
-            <!-- Passo 2: Login/Cadastro Empresa (Opções Google vs Email) -->
-            <div id="stepEmployerAuth" class="hidden auth-card space-y-4">
+            <div id="stepAuthFields" class="hidden auth-card space-y-4">
                 <button onclick="goBack()" class="text-gray-400 text-sm font-bold mb-4 flex items-center"><i class="fas fa-arrow-left mr-2"></i> Voltar</button>
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Acesso da Empresa</h2>
+                <h2 id="authTitle" class="text-2xl font-bold text-gray-800 mb-6">Acesso</h2>
 
-                <!-- Opção Google -->
-                <button onclick="simulateGoogleLogin()" class="w-full flex items-center justify-center gap-3 border border-gray-300 p-3.5 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-sm">
+                <button onclick="loginGoogle()" class="w-full flex items-center justify-center gap-3 border border-gray-300 p-3.5 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-sm">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18">
                     Continuar com Google
                 </button>
 
-                <div class="relative py-4">
-                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
-                    <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-gray-400 font-bold">ou use seu e-mail</span></div>
-                </div>
+                <div class="relative py-4"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div><div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-gray-400 font-bold">ou e-mail</span></div></div>
 
-                <!-- Formulário Email/Senha -->
-                <form id="employerForm" class="space-y-3">
-                    <div id="regFields" class="hidden space-y-3">
-                        <input type="text" id="empName" placeholder="Nome da Empresa / Fantasia" class="w-full p-3.5 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                <form id="authForm" class="space-y-3">
+                    <div id="extraFields" class="hidden space-y-3">
+                        <input type="text" id="regName" placeholder="Nome Completo / Empresa" class="w-full p-3.5 border rounded-xl bg-gray-50">
+                        <input type="tel" id="regPhone" placeholder="WhatsApp" class="w-full p-3.5 border rounded-xl bg-gray-50">
+                        <input type="text" id="regExtra" placeholder="Cargo/Especialidade" class="w-full p-3.5 border rounded-xl bg-gray-50">
                     </div>
-                    <input type="email" id="empEmail" placeholder="Seu e-mail corporativo" class="w-full p-3.5 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
-                    <input type="password" id="empPass" placeholder="Senha" class="w-full p-3.5 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
-                    
-                    <button type="submit" id="btnMainAuth" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700">Entrar</button>
+                    <input type="email" id="authEmail" placeholder="E-mail" class="w-full p-3.5 border rounded-xl bg-gray-50" required>
+                    <input type="password" id="authPass" placeholder="Senha" class="w-full p-3.5 border rounded-xl bg-gray-50" required>
+                    <button type="submit" id="btnMainAuth" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg">Entrar</button>
                 </form>
-
-                <p class="text-center text-sm text-gray-500 pt-4">
-                    <span id="toggleText">Ainda não tem conta?</span> 
-                    <button onclick="toggleAuthMode()" id="btnToggle" class="text-blue-600 font-bold underline">Cadastre-se agora</button>
-                </p>
-            </div>
-
-            <!-- Passo 3: Cadastro Rápido Candidato -->
-            <div id="stepCandidateAuth" class="hidden auth-card space-y-4">
-                <button onclick="goBack()" class="text-gray-400 text-sm font-bold mb-4 flex items-center"><i class="fas fa-arrow-left mr-2"></i> Voltar</button>
-                <h2 class="text-2xl font-bold text-gray-800">Seu Perfil Profissional</h2>
-                <p class="text-sm text-gray-500 mb-4 italic">Sem currículo. Sem complicação.</p>
-                <form id="candForm" class="space-y-3">
-                    <input type="text" id="cName" placeholder="Seu Nome Completo" class="w-full p-4 border rounded-xl" required>
-                    <input type="tel" id="cPhone" placeholder="WhatsApp (DDD + Número)" class="w-full p-4 border rounded-xl" required>
-                    <input type="text" id="cRole" placeholder="O que você faz? (ex: Auxiliar)" class="w-full p-4 border rounded-xl" required>
-                    <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-green-100">Ver Vagas Próximas</button>
-                </form>
+                <p class="text-center text-sm text-gray-500 pt-4"><span id="toggleText">Ainda não tem conta?</span> <button onclick="toggleAuthMode()" id="btnToggle" class="text-blue-600 font-bold underline">Cadastre-se</button></p>
             </div>
         </div>
     </div>
 
-    <!-- APP HEADER -->
+    <!-- CONTEÚDO DO APP -->
     <header class="bg-white border-b border-gray-100 p-4 sticky top-0 z-50">
         <div class="max-w-md mx-auto flex justify-between items-center">
             <span class="text-xl font-black text-blue-600 tracking-tighter">TrampoLocal</span>
             <div class="flex items-center gap-4">
                 <span id="badgeUser" class="text-[10px] font-bold bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase"></span>
-                <button onclick="logout()" class="text-red-400 text-xs font-bold"><i class="fas fa-sign-out-alt"></i></button>
+                <button onclick="handleLogout()" class="text-red-400 text-xs font-bold"><i class="fas fa-sign-out-alt"></i></button>
             </div>
         </div>
     </header>
 
-    <!-- MAIN -->
     <main class="max-w-md mx-auto p-4">
-        
         <!-- View Candidato -->
-        <section id="viewCandidate">
-            <div class="bg-blue-600 rounded-3xl p-6 mb-6 text-white shadow-xl shadow-blue-100">
+        <section id="viewCandidate" class="hidden">
+            <div class="bg-blue-600 rounded-3xl p-6 mb-6 text-white shadow-xl">
                 <h2 class="text-xl font-bold">Olá, <span id="helloUser"></span>!</h2>
-                <p class="text-blue-100 text-sm mt-1">Encontramos vagas no seu bairro.</p>
+                <p class="text-blue-100 text-sm mt-1">Encontramos vagas para você.</p>
             </div>
             <div id="jobFeed" class="space-y-4"></div>
         </section>
@@ -122,20 +93,12 @@
         <section id="viewEmployer" class="hidden">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-gray-800">Minhas Vagas</h2>
-                <button onclick="showModal('modalJob')" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-md">+ Criar Vaga</button>
+                <button onclick="showModal('modalJob')" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm">+ Criar Vaga</button>
             </div>
-
             <div class="grid grid-cols-2 gap-3 mb-8">
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                    <p class="text-gray-400 text-[10px] font-bold uppercase">Vagas Ativas</p>
-                    <p id="statJobs" class="text-2xl font-black text-blue-600">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                    <p class="text-gray-400 text-[10px] font-bold uppercase">Interessados</p>
-                    <p id="statApps" class="text-2xl font-black text-green-500">0</p>
-                </div>
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm"><p class="text-gray-400 text-[10px] font-bold uppercase">Vagas Ativas</p><p id="statJobs" class="text-2xl font-black text-blue-600">0</p></div>
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm"><p class="text-gray-400 text-[10px] font-bold uppercase">Interessados</p><p id="statApps" class="text-2xl font-black text-green-500">0</p></div>
             </div>
-
             <div id="employerJobsList" class="space-y-4"></div>
         </section>
     </main>
@@ -147,7 +110,7 @@
             <form id="jobForm" class="space-y-3">
                 <input type="text" id="jTitle" placeholder="Cargo" class="w-full p-3 border rounded-xl" required>
                 <input type="text" id="jBairro" placeholder="Bairro" class="w-full p-3 border rounded-xl" required>
-                <input type="text" id="jSalario" placeholder="Salário (Ex: 1.500 ou A combinar)" class="w-full p-3 border rounded-xl">
+                <input type="text" id="jSalario" placeholder="Salário" class="w-full p-3 border rounded-xl">
                 <textarea id="jDesc" placeholder="Descrição rápida..." class="w-full p-3 border rounded-xl h-24"></textarea>
                 <div class="flex gap-2 pt-4">
                     <button type="button" onclick="closeModal('modalJob')" class="flex-1 py-3 font-bold text-gray-400">Cancelar</button>
@@ -173,87 +136,126 @@
         <div class="text-gray-300 flex flex-col items-center"><i class="fas fa-rocket text-xl"></i><span class="text-[10px] font-bold">Premium</span></div>
     </nav>
 
-    <script>
-        let currentUser = JSON.parse(localStorage.getItem('trampo_user')) || null;
-        let allJobs = JSON.parse(localStorage.getItem('trampo_jobs')) || [];
-        let isRegister = false;
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, where, doc, updateDoc, deleteDoc, arrayUnion, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- AUTH LOGIC ---
-        function goToEmployerAuth() {
+        // CONFIGURAÇÃO FIREBASE (Substitua pelos seus dados do console)
+const firebaseConfig = {
+  apiKey: "AIzaSyAY06PHLqEUCBzg9SjnH4N6xe9ZzM8OLvo",
+  authDomain: "projeto-bfed3.firebaseapp.com",
+  projectId: "projeto-bfed3",
+  storageBucket: "projeto-bfed3.firebasestorage.app",
+  messagingSenderId: "785289237066",
+  appId: "1:785289237066:web:92853c6abfaa46b6d5ccb3"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // ESTADO GLOBAL
+        let userData = null;
+        let isRegisterMode = false;
+        let selectedRole = 'candidate';
+
+        // --- AUTH ---
+        window.goToAuth = (role) => {
+            selectedRole = role;
             document.getElementById('stepRole').classList.add('hidden');
-            document.getElementById('stepEmployerAuth').classList.remove('hidden');
-        }
+            document.getElementById('stepAuthFields').classList.remove('hidden');
+            document.getElementById('authTitle').innerText = role === 'employer' ? 'Acesso Empresa' : 'Acesso Candidato';
+            if(isRegisterMode) document.getElementById('extraFields').classList.remove('hidden');
+        };
 
-        function showCandidateRegister() {
-            document.getElementById('stepRole').classList.add('hidden');
-            document.getElementById('stepCandidateAuth').classList.remove('hidden');
-        }
-
-        function goBack() {
-            document.querySelectorAll('.auth-card').forEach(el => el.classList.add('hidden'));
+        window.goBack = () => {
             document.getElementById('stepRole').classList.remove('hidden');
-        }
-
-        function toggleAuthMode() {
-            isRegister = !isRegister;
-            document.getElementById('btnMainAuth').innerText = isRegister ? 'Criar Minha Conta' : 'Entrar';
-            document.getElementById('toggleText').innerText = isRegister ? 'Já tem conta?' : 'Ainda não tem conta?';
-            document.getElementById('btnToggle').innerText = isRegister ? 'Faça Login' : 'Cadastre-se agora';
-            document.getElementById('regFields').classList.toggle('hidden', !isRegister);
-        }
-
-        function simulateGoogleLogin() {
-            alert("Simulando login com Google...");
-            completeAuth({ id: 'g123', name: 'Empresa Google Ltda', role: 'employer', email: 'contato@google.com' });
-        }
-
-        document.getElementById('employerForm').onsubmit = (e) => {
-            e.preventDefault();
-            const name = isRegister ? document.getElementById('empName').value : 'Empresa Logada';
-            completeAuth({ id: Date.now(), name: name, role: 'employer', email: document.getElementById('empEmail').value });
+            document.getElementById('stepAuthFields').classList.add('hidden');
         };
 
-        document.getElementById('candForm').onsubmit = (e) => {
-            e.preventDefault();
-            completeAuth({ 
-                id: Date.now(), 
-                name: document.getElementById('cName').value, 
-                role: 'candidate', 
-                phone: document.getElementById('cPhone').value,
-                pref: document.getElementById('cRole').value
-            });
+        window.toggleAuthMode = () => {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('extraFields').classList.toggle('hidden', !isRegisterMode);
+            document.getElementById('btnMainAuth').innerText = isRegisterMode ? 'Criar Conta' : 'Entrar';
+            document.getElementById('btnToggle').innerText = isRegisterMode ? 'Faça Login' : 'Cadastre-se';
         };
 
-        function completeAuth(user) {
-            currentUser = user;
-            localStorage.setItem('trampo_user', JSON.stringify(currentUser));
-            location.reload();
-        }
+        // Login/Cadastro
+        document.getElementById('authForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const pass = document.getElementById('authPass').value;
 
-        function logout() {
-            localStorage.removeItem('trampo_user');
-            location.reload();
-        }
+            try {
+                if (isRegisterMode) {
+                    const res = await createUserWithEmailAndPassword(auth, email, pass);
+                    await setDoc(doc(db, "users", res.user.uid), {
+                        uid: res.user.uid,
+                        name: document.getElementById('regName').value,
+                        phone: document.getElementById('regPhone').value,
+                        extra: document.getElementById('regExtra').value,
+                        role: selectedRole
+                    });
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                }
+            } catch (err) { alert("Erro na autenticação: " + err.message); }
+        };
+
+        window.loginGoogle = async () => {
+            try {
+                const res = await signInWithPopup(auth, googleProvider);
+                const userDoc = await getDoc(doc(db, "users", res.user.uid));
+                if (!userDoc.exists()) {
+                    await setDoc(doc(db, "users", res.user.uid), {
+                        uid: res.user.uid,
+                        name: res.user.displayName,
+                        role: selectedRole,
+                        phone: ""
+                    });
+                }
+            } catch (err) { alert("Erro Google: " + err.message); }
+        };
+
+        window.handleLogout = () => signOut(auth);
 
         // --- APP LOGIC ---
-        function init() {
-            if(!currentUser) {
+        onAuthStateChanged(auth, async (user) => {
+            document.getElementById('loadingScreen').classList.add('hidden');
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                userData = userDoc.data();
+                document.getElementById('authScreen').classList.add('hidden');
+                initApp();
+            } else {
                 document.getElementById('authScreen').classList.remove('hidden');
-                return;
             }
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('badgeUser').innerText = currentUser.role === 'employer' ? 'Painel Empresa' : 'Candidato';
-            
-            if(currentUser.role === 'employer') {
+        });
+
+        function initApp() {
+            document.getElementById('badgeUser').innerText = userData.role === 'employer' ? 'Painel Empresa' : 'Candidato';
+            if(userData.role === 'employer') {
                 document.getElementById('viewEmployer').classList.remove('hidden');
                 document.getElementById('viewCandidate').classList.add('hidden');
             } else {
-                document.getElementById('helloUser').innerText = currentUser.name.split(' ')[0];
+                document.getElementById('viewEmployer').classList.add('hidden');
+                document.getElementById('viewCandidate').classList.remove('hidden');
+                document.getElementById('helloUser').innerText = userData.name.split(' ')[0];
             }
-            render();
+            startRealtimeUpdates();
         }
 
-        function render() {
+        function startRealtimeUpdates() {
+            onSnapshot(collection(db, "jobs"), (snapshot) => {
+                const jobs = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                render(jobs);
+            });
+        }
+
+        function render(jobs) {
             const feed = document.getElementById('jobFeed');
             const empList = document.getElementById('employerJobsList');
             feed.innerHTML = ''; empList.innerHTML = '';
@@ -261,8 +263,8 @@
             let totalApps = 0;
             let myJobsCount = 0;
 
-            allJobs.forEach(job => {
-                // View Candidato
+            jobs.forEach(job => {
+                // Candidato vê todas
                 feed.innerHTML += `
                     <div class="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                         <div class="flex justify-between items-start">
@@ -271,99 +273,80 @@
                         </div>
                         <p class="text-blue-600 text-xs font-bold mt-1"><i class="fas fa-map-marker-alt mr-1"></i> ${job.bairro} • ${job.empresa}</p>
                         <p class="text-gray-400 text-sm mt-3 line-clamp-2">${job.desc}</p>
-                        <button onclick="apply(${job.id})" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-2xl font-bold shadow-lg shadow-blue-50 active:scale-95 transition-all">Tenho Interesse</button>
-                    </div>
-                `;
+                        <button onclick="applyToJob('${job.id}')" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-2xl font-bold">Tenho Interesse</button>
+                    </div>`;
 
-                // View Empresa
-                if(currentUser.role === 'employer' && job.companyId === currentUser.id) {
+                // Empresa vê as dela
+                if(userData.role === 'employer' && job.companyId === userData.uid) {
                     myJobsCount++;
-                    totalApps += job.applicants.length;
+                    totalApps += job.applicants ? job.applicants.length : 0;
                     empList.innerHTML += `
                         <div class="bg-white p-4 rounded-2xl border-l-4 border-blue-600 shadow-sm flex justify-between items-center">
                             <div>
                                 <h4 class="font-bold text-gray-800">${job.title}</h4>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase">${job.applicants.length} Candidatos</p>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase">${job.applicants ? job.applicants.length : 0} Candidatos</p>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="viewCandidates(${job.id})" class="bg-blue-50 text-blue-600 text-xs font-bold px-3 py-2 rounded-lg">Ver</button>
-                                <button onclick="deleteJob(${job.id})" class="text-gray-300 p-2"><i class="fas fa-trash"></i></button>
+                                <button onclick="viewCandidates('${job.id}')" class="bg-blue-50 text-blue-600 text-xs font-bold px-3 py-2 rounded-lg">Ver</button>
+                                <button onclick="deleteJob('${job.id}')" class="text-gray-300 p-2"><i class="fas fa-trash"></i></button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }
             });
 
-            if(currentUser.role === 'employer') {
+            if(userData.role === 'employer') {
                 document.getElementById('statJobs').innerText = myJobsCount;
                 document.getElementById('statApps').innerText = totalApps;
             }
+            window.allJobs = jobs; // Cache global para modais
         }
 
-        function apply(jobId) {
-            const job = allJobs.find(j => j.id === jobId);
-            if(!job.applicants.find(a => a.id === currentUser.id)) {
-                job.applicants.push(currentUser);
-                save();
-                alert("Candidatura enviada! A empresa entrará em contato.");
-                render();
-            } else {
-                alert("Você já demonstrou interesse nesta vaga.");
-            }
-        }
+        window.applyToJob = async (jobId) => {
+            const jobRef = doc(db, "jobs", jobId);
+            await updateDoc(jobRef, {
+                applicants: arrayUnion({
+                    uid: userData.uid,
+                    name: userData.name,
+                    phone: userData.phone,
+                    pref: userData.extra
+                })
+            });
+            alert("Interesse enviado!");
+        };
 
-        function viewCandidates(jobId) {
-            const job = allJobs.find(j => j.id === jobId);
+        window.viewCandidates = (jobId) => {
+            const job = window.allJobs.find(j => j.id === jobId);
             const content = document.getElementById('candListContent');
             showModal('modalList');
-            
-            if(job.applicants.length === 0) {
-                content.innerHTML = "<p class='text-gray-400 text-sm italic'>Nenhum candidato ainda.</p>";
-                return;
-            }
-
-            content.innerHTML = job.applicants.map(a => `
+            content.innerHTML = job.applicants?.map(a => `
                 <div class="p-4 border border-gray-100 rounded-2xl bg-gray-50">
                     <p class="font-bold text-gray-800">${a.name}</p>
                     <p class="text-xs text-gray-500 mb-3">${a.pref || 'Geral'}</p>
-                    <a href="https://wa.me/55${a.phone}" target="_blank" class="inline-block bg-green-500 text-white text-[10px] font-bold px-3 py-2 rounded-lg uppercase">
-                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
-                    </a>
+                    <a href="https://wa.me/55${a.phone.replace(/\D/g,'')}" target="_blank" class="inline-block bg-green-500 text-white text-[10px] font-bold px-3 py-2 rounded-lg uppercase">WhatsApp</a>
                 </div>
-            `).join('');
-        }
+            `).join('') || "Nenhum interessado.";
+        };
 
-        document.getElementById('jobForm').onsubmit = (e) => {
+        document.getElementById('jobForm').onsubmit = async (e) => {
             e.preventDefault();
-            const newJob = {
-                id: Date.now(),
-                companyId: currentUser.id,
-                empresa: currentUser.name,
+            await addDoc(collection(db, "jobs"), {
+                companyId: userData.uid,
+                empresa: userData.name,
                 title: document.getElementById('jTitle').value,
                 bairro: document.getElementById('jBairro').value,
                 salario: document.getElementById('jSalario').value,
                 desc: document.getElementById('jDesc').value,
-                applicants: []
-            };
-            allJobs.unshift(newJob);
-            save();
+                applicants: [],
+                createdAt: new Date()
+            });
             closeModal('modalJob');
-            render();
             e.target.reset();
         };
 
-        function deleteJob(id) {
-            if(confirm("Excluir esta vaga?")) {
-                allJobs = allJobs.filter(j => j.id !== id);
-                save(); render();
-            }
-        }
+        window.deleteJob = async (id) => { if(confirm("Excluir vaga?")) await deleteDoc(doc(db, "jobs", id)); };
+        window.showModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 
-        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function save() { localStorage.setItem('trampo_jobs', JSON.stringify(allJobs)); }
-
-        init();
     </script>
 </body>
 </html>
